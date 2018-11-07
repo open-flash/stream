@@ -1,11 +1,14 @@
 {
   "name": "@open-flash/stream",
-  "version": "0.0.18",
+  "version": "0.0.1",
   "homepage": "https://github.com/open-flash/stream",
   "description": "Streams for Open Flash",
   "main": "dist/lib/index.js",
   "types": "dist/lib/index.d.ts",
   "private": true,
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "git@github.com:open-flash/stream.git"
