@@ -99,7 +99,7 @@ export class ReadableStream implements ReadableBitStream, ReadableByteStream {
   byteEnd: UintSize;
   bitPos: UintSize;
 
-  constructor(bytes: Uint8Array, byteOffset: UintSize = 0, bitOffset: UintSize = 0) {
+  constructor(bytes: Uint8Array, _byteOffset: UintSize = 0, bitOffset: UintSize = 0) {
     this.bytes = bytes;
     this.view = new DataView(bytes.buffer, bytes.byteOffset, bytes.length);
     this.bytePos = 0;

@@ -1,6 +1,6 @@
 import chai from "chai";
-import { ReadableStream } from "../lib";
 import { Uint8 } from "semantic-types";
+import { ReadableStream } from "../lib";
 
 describe("ReadableStream", function () {
   it("readUint8", async function () {
