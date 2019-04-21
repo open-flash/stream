@@ -253,14 +253,14 @@ export class WritableStream implements WritableBitStream, WritableByteStream {
 
   writeUint32Leb128(value: Uint32): void {
     const chunk: Uint8[] = [];
-    do {
-      let nextByte: Uint8 = value & 0x7f;
-      value = value >> 7;
+    while (value !== 0 || chunk.length === 0) {
+      let nextByte: Uint8 = value % 0x80; // value & 0x7f
+      value = (value - nextByte) / 0x80; // value >> 7
       if (value !== 0) {
         nextByte |= 0x80;
       }
       chunk.push(nextByte);
-    } while (value !== 0);
+    }
     this.chunks.push(new Uint8Array(chunk));
     this.bytePos += chunk.length;
   }
