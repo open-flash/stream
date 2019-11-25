@@ -1,4 +1,4 @@
-# Next
+# 0.2.1 (2019-11-25)
 
 - **[Internal]** Fix continuous deployment script.
 
