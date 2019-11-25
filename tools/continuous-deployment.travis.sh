@@ -10,7 +10,7 @@
 # EMAIL="demurgos@demurgos.net"
 # OUTPUT_KEYFILE="deploy_key"
 # ssh-keygen -t rsa -C "${EMAIL}" -N "" -f "${OUTPUT_KEYFILE}"
-# travis encrypt-file "${OUTPUT_KEYFILE}"
+# travis encrypt-file "${OUTPUT_KEYFILE}" --com
 # rm "${OUTPUT_KEYFILE}"
 # ```
 # Upload the public key to the repository's setting, then remove the public key and commit the encrypted private key.
