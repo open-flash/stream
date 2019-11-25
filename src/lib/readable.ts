@@ -2,6 +2,8 @@ import { Incident } from "incident";
 import { Float16, Float32, Float64, Sint16, Sint32, Sint8, Uint16, Uint32, Uint8, UintSize } from "semantic-types";
 import { createIncompleteStreamError } from "./errors/incomplete-stream";
 
+const UTF8_DECODER: TextDecoder = new TextDecoder("UTF-8", {fatal: true});
+
 /**
  * Represents a non-byte-aligned stream
  */
@@ -46,9 +48,19 @@ export interface ReadableByteStream {
 
   takeBytes(length: UintSize): Uint8Array;
 
-  readString(byteLength: UintSize): string;
+  /**
+   * Read the next `byteLength` bytes as an UTF-8 string.
+   *
+   * @param byteLength Length of the string in bytes.
+   */
+  readUtf8(byteLength: UintSize): string;
 
-  readCString(): string;
+  /**
+   * Read the next bytes as an UTF-8 string, up to NUL.
+   *
+   * The `NUL` byte is consumed but not included in the result.
+   */
+  readNulTerminatedUtf8(): string;
 
   readUint8(): Uint8;
 
@@ -317,26 +329,24 @@ export class ReadableStream implements ReadableBitStream, ReadableByteStream {
     return result;
   }
 
-  readString(byteLength: number): string {
+  readUtf8(byteLength: number): string {
     const endOfString: number = this.bytePos + byteLength;
     if (endOfString > this.bytes.length) {
       throw createIncompleteStreamError();
     }
-    // TODO(demurgos): Remove type cast
-    const strBuffer: Buffer = Buffer.from(this.bytes.subarray(this.bytePos, endOfString) as Buffer);
-    const result: string = strBuffer.toString("utf8");
+    const slice: Uint8Array = this.bytes.subarray(this.bytePos, endOfString);
+    const result: string = UTF8_DECODER.decode(slice);
     this.bytePos = endOfString;
     return result;
   }
 
-  readCString(): string {
+  readNulTerminatedUtf8(): string {
     const endOfString: number = this.bytes.indexOf(0, this.bytePos);
     if (endOfString < 0) {
       throw createIncompleteStreamError();
     }
-    // TODO(demurgos): Remove type cast
-    const strBuffer: Buffer = Buffer.from(this.bytes.subarray(this.bytePos, endOfString) as Buffer);
-    const result: string = strBuffer.toString("utf8");
+    const slice: Uint8Array = this.bytes.subarray(this.bytePos, endOfString);
+    const result: string = UTF8_DECODER.decode(slice);
     this.bytePos = endOfString + 1;
     return result;
   }

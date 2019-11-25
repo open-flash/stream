@@ -20,6 +20,14 @@ const project: Project = {
   buildDir: "build",
   distDir: "dist",
   srcDir: "src",
+  typescript: {
+    tscOptions: {
+      lib: [
+        "dom",
+        "es2019",
+      ],
+    },
+  },
   tslint: {
     configuration: {
       rules: {
@@ -43,12 +51,16 @@ const lib: LibTarget = {
       return <any> {...old, version, scripts: undefined, private: false};
     },
     npmPublish: {
-      tag: options.devDist !== undefined ? "next" : "latest",
+      tag: options.next !== undefined ? "next" : "latest",
     },
   },
   customTypingsDir: "src/custom-typings",
   tscOptions: {
     declaration: true,
+    lib: [
+      "dom",
+      "es2019",
+    ],
     skipLibCheck: true,
   },
   typedoc: {
@@ -71,6 +83,10 @@ const test: MochaTarget = {
   scripts: ["test/**/*.ts", "lib/**/*.ts"],
   customTypingsDir: "src/custom-typings",
   tscOptions: {
+    lib: [
+      "dom",
+      "es2019",
+    ],
     skipLibCheck: true,
   },
   // generateTestMain: true,

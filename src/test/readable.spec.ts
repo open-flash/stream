@@ -9,6 +9,20 @@ describe("ReadableStream", function () {
     const actual: Uint8 = rs.readUint8();
     chai.assert.deepEqual(actual, expected);
   });
+
+  describe("readUtf8", function () {
+    it("`a`", async function () {
+      const rs: ReadableStream = new ReadableStream(Buffer.from([0x61]));
+      const expected: string = "a";
+      const actual: string = rs.readUtf8(1);
+      chai.assert.deepEqual(actual, expected);
+    });
+
+    it("invalid (0x86)", async function () {
+      const rs: ReadableStream = new ReadableStream(Buffer.from([0x86]));
+      chai.assert.throws(() => rs.readUtf8(1));
+    });
+  });
 });
 
 // import {assert} from "chai";

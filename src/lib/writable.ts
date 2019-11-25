@@ -2,6 +2,8 @@ import { Incident } from "incident";
 import { Float16, Float32, Float64, Sint16, Sint32, Sint8, Uint16, Uint32, Uint8, UintSize } from "semantic-types";
 import { concatBytes } from "./concat-bytes";
 
+const UTF8_ENCODER: TextEncoder = new TextEncoder();
+
 /**
  * Represents a non-byte-aligned stream
  */
@@ -40,9 +42,9 @@ export interface WritableByteStream {
 
   writeBytes(value: Uint8Array): void;
 
-  writeString(value: string): void;
+  writeUtf8(value: string): void;
 
-  writeCString(value: string): void;
+  writeNulTerminatedUtf8(value: string): void;
 
   writeUint8(value: Uint8): void;
 
@@ -265,12 +267,12 @@ export class WritableStream implements WritableBitStream, WritableByteStream {
     this.bytePos += chunk.length;
   }
 
-  writeString(value: string): void {
-    this.writeBytes(Buffer.from(value, "utf8"));
+  writeUtf8(value: string): void {
+    this.writeBytes(UTF8_ENCODER.encode(value));
   }
 
-  writeCString(value: string): void {
-    this.writeBytes(Buffer.from(value, "utf8"));
+  writeNulTerminatedUtf8(value: string): void {
+    this.writeBytes(UTF8_ENCODER.encode(value));
     this.writeUint8(0);
   }
 
