@@ -1,3 +1,7 @@
+# Next
+
+- **[Internal]** Fix continuous deployment script.
+
 # 0.2.0 (2019-11-25)
 
 - **[Breaking change]** Require Node `13.2`.
