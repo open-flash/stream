@@ -44,7 +44,7 @@ export interface WritableByteStream {
 
   writeUtf8(value: string): void;
 
-  writeNulTerminatedUtf8(value: string): void;
+  writeNulUtf8(value: string): void;
 
   writeUint8(value: Uint8): void;
 
@@ -271,7 +271,7 @@ export class WritableStream implements WritableBitStream, WritableByteStream {
     this.writeBytes(UTF8_ENCODER.encode(value));
   }
 
-  writeNulTerminatedUtf8(value: string): void {
+  writeNulUtf8(value: string): void {
     this.writeBytes(UTF8_ENCODER.encode(value));
     this.writeUint8(0);
   }

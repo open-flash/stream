@@ -60,7 +60,7 @@ export interface ReadableByteStream {
    *
    * The `NUL` byte is consumed but not included in the result.
    */
-  readNulTerminatedUtf8(): string;
+  readNulUtf8(): string;
 
   readUint8(): Uint8;
 
@@ -340,7 +340,7 @@ export class ReadableStream implements ReadableBitStream, ReadableByteStream {
     return result;
   }
 
-  readNulTerminatedUtf8(): string {
+  readNulUtf8(): string {
     const endOfString: number = this.bytes.indexOf(0, this.bytePos);
     if (endOfString < 0) {
       throw createIncompleteStreamError();

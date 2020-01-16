@@ -1,3 +1,7 @@
+# Next
+
+- **[Breaking change]** Rename `readNulTerminatedUtf8` to `readNulUtf8` and `writeNulTerminatedUtf8` to `writeNulUtf8`.
+
 # 0.2.1 (2019-11-25)
 
 - **[Internal]** Fix continuous deployment script.
