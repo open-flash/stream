@@ -1,5 +1,6 @@
 import chai from "chai";
-import { WritableStream } from "../lib";
+
+import { WritableStream } from "../lib/index.js";
 
 describe("WritableStream", function () {
   it("writeUint32Leb128", async function () {
