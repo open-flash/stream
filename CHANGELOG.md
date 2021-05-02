@@ -1,4 +1,4 @@
-# Next
+# 0.4.0 (2021-05-02)
 
 - **[Breaking change]** Update to use native ESM.
 - **[Feature]** Add `Float64LE32` support.
