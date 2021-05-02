@@ -77,9 +77,12 @@ export interface WritableByteStream {
 
   writeFloat64LE(value: Float64): void;
 
+  writeFloat64LE32(value: Float64): void;
+
   getBytes(): Uint8Array;
 }
 
+// Temporary buffer, used for float support
 const TMP_BUFFER: ArrayBuffer = new ArrayBuffer(8);
 const TMP_DATA_VIEW: DataView = new DataView(TMP_BUFFER);
 
@@ -87,14 +90,14 @@ export class WritableStream implements WritableBitStream, WritableByteStream {
   bytePos: UintSize;
   bitPos: UintSize;
 
-  private chunks: Uint8Array[];
-  private bitsBuffer: Uint8;
+  #chunks: Uint8Array[];
+  #bitsBuffer: Uint8;
 
   constructor() {
     this.bytePos = 0;
     this.bitPos = 0;
-    this.bitsBuffer = 0;
-    this.chunks = [];
+    this.#bitsBuffer = 0;
+    this.#chunks = [];
   }
 
   asBitStream(): this {
@@ -108,9 +111,9 @@ export class WritableStream implements WritableBitStream, WritableByteStream {
 
   align(): void {
     if (this.bitPos !== 0) {
-      this.writeUint8(this.bitsBuffer); // Increments `this.bytePos`
+      this.writeUint8(this.#bitsBuffer); // Increments `this.bytePos`
       this.bitPos = 0;
-      this.bitsBuffer = 0;
+      this.#bitsBuffer = 0;
     }
   }
 
@@ -119,12 +122,12 @@ export class WritableStream implements WritableBitStream, WritableByteStream {
   }
 
   writeBytes(value: Uint8Array): void {
-    this.chunks.push(value);
+    this.#chunks.push(value);
     this.bytePos += value.length;
   }
 
   writeZeros(size: UintSize): void {
-    this.chunks.push(new Uint8Array(size));
+    this.#chunks.push(new Uint8Array(size));
     this.bytePos += size;
   }
 
@@ -134,8 +137,8 @@ export class WritableStream implements WritableBitStream, WritableByteStream {
       return;
     }
 
-    this.writeUint8(this.bitsBuffer);
-    this.bitsBuffer = 0;
+    this.writeUint8(this.#bitsBuffer);
+    this.#bitsBuffer = 0;
     size -= 8 - this.bitPos;
 
     const bitPos: UintSize = size % 8;
@@ -152,7 +155,7 @@ export class WritableStream implements WritableBitStream, WritableByteStream {
   }
 
   writeSint32LE(value: Sint32): void {
-    this.chunks.push(Buffer.from([
+    this.#chunks.push(Buffer.from([
       (value >>> 0) & 0xff,
       (value >>> 8) & 0xff,
       (value >>> 16) & 0xff,
@@ -162,12 +165,12 @@ export class WritableStream implements WritableBitStream, WritableByteStream {
   }
 
   writeUint8(value: Uint8): void {
-    this.chunks.push(Buffer.from([value & 0xff]));
+    this.#chunks.push(Buffer.from([value & 0xff]));
     this.bytePos++;
   }
 
   writeUint16BE(value: Uint16): void {
-    this.chunks.push(Buffer.from([
+    this.#chunks.push(Buffer.from([
       (value >>> 8) & 0xff,
       (value >>> 0) & 0xff,
     ]));
@@ -175,7 +178,7 @@ export class WritableStream implements WritableBitStream, WritableByteStream {
   }
 
   writeUint16LE(value: Uint16): void {
-    this.chunks.push(Buffer.from([
+    this.#chunks.push(Buffer.from([
       (value >>> 0) & 0xff,
       (value >>> 8) & 0xff,
     ]));
@@ -183,7 +186,7 @@ export class WritableStream implements WritableBitStream, WritableByteStream {
   }
 
   writeUint32BE(value: Uint32): void {
-    this.chunks.push(Buffer.from([
+    this.#chunks.push(Buffer.from([
       (value >>> 24) & 0xff,
       (value >>> 16) & 0xff,
       (value >>> 8) & 0xff,
@@ -206,25 +209,32 @@ export class WritableStream implements WritableBitStream, WritableByteStream {
 
   writeFloat32BE(value: Float32): void {
     TMP_DATA_VIEW.setFloat32(0, value, false);
-    this.chunks.push(new Uint8Array(TMP_BUFFER.slice(0, 4)));
+    this.#chunks.push(new Uint8Array(TMP_BUFFER.slice(0, 4)));
     this.bytePos += 4;
   }
 
   writeFloat32LE(value: Float32): void {
     TMP_DATA_VIEW.setFloat32(0, value, true);
-    this.chunks.push(new Uint8Array(TMP_BUFFER.slice(0, 4)));
+    this.#chunks.push(new Uint8Array(TMP_BUFFER.slice(0, 4)));
     this.bytePos += 4;
   }
 
   writeFloat64BE(value: Float64): void {
     TMP_DATA_VIEW.setFloat64(0, value, false);
-    this.chunks.push(new Uint8Array(TMP_BUFFER.slice(0, 8)));
+    this.#chunks.push(new Uint8Array(TMP_BUFFER.slice(0, 8)));
     this.bytePos += 8;
   }
 
   writeFloat64LE(value: Float64): void {
     TMP_DATA_VIEW.setFloat64(0, value, true);
-    this.chunks.push(new Uint8Array(TMP_BUFFER.slice(0, 8)));
+    this.#chunks.push(new Uint8Array(TMP_BUFFER.slice(0, 8)));
+    this.bytePos += 8;
+  }
+
+  writeFloat64LE32(value: Float64): void {
+    TMP_DATA_VIEW.setFloat64(0, value, true);
+    this.#chunks.push(new Uint8Array(TMP_BUFFER.slice(4, 8)));
+    this.#chunks.push(new Uint8Array(TMP_BUFFER.slice(0, 4)));
     this.bytePos += 8;
   }
 
@@ -264,7 +274,7 @@ export class WritableStream implements WritableBitStream, WritableByteStream {
       }
       chunk.push(nextByte);
     }
-    this.chunks.push(new Uint8Array(chunk));
+    this.#chunks.push(new Uint8Array(chunk));
     this.bytePos += chunk.length;
   }
 
@@ -278,8 +288,8 @@ export class WritableStream implements WritableBitStream, WritableByteStream {
   }
 
   getBytes(): Uint8Array {
-    const bytes: Uint8Array = concatBytes(this.chunks);
-    this.chunks = [bytes];
+    const bytes: Uint8Array = concatBytes(this.#chunks);
+    this.#chunks = [bytes];
     return bytes;
   }
 
@@ -294,12 +304,12 @@ export class WritableStream implements WritableBitStream, WritableByteStream {
 
       const consumedBits: number = Math.min(availableBits, bits);
       const chunk: number = (value >>> (bits - consumedBits)) & ((1 << consumedBits) - 1);
-      this.bitsBuffer = this.bitsBuffer | (chunk << (availableBits - consumedBits));
+      this.#bitsBuffer = this.#bitsBuffer | (chunk << (availableBits - consumedBits));
       bits -= consumedBits;
       this.bitPos += consumedBits;
       if (this.bitPos === 8) {
-        this.writeUint8(this.bitsBuffer);
-        this.bitsBuffer = 0;
+        this.writeUint8(this.#bitsBuffer);
+        this.#bitsBuffer = 0;
         this.bitPos = 0;
       }
     }
