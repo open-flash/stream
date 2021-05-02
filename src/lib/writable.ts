@@ -1,6 +1,7 @@
 import { Incident } from "incident";
-import { Float16, Float32, Float64, Sint16, Sint32, Sint8, Uint16, Uint32, Uint8, UintSize } from "semantic-types";
-import { concatBytes } from "./concat-bytes";
+import { Float16, Float32, Float64, Sint8, Sint16, Sint32, Uint8, Uint16, Uint32, UintSize } from "semantic-types";
+
+import { concatBytes } from "./concat-bytes.js";
 
 const UTF8_ENCODER: TextEncoder = new TextEncoder();
 

@@ -1,3 +1,8 @@
+# Next
+
+- **[Breaking change]** Update to use native ESM.
+- **[Internal]** Update dependencies.
+
 # 0.3.0 (2020-01-16)
 
 - **[Breaking change]** Rename `readNulTerminatedUtf8` to `readNulUtf8` and `writeNulTerminatedUtf8` to `writeNulUtf8`.

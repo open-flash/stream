@@ -7,7 +7,7 @@
     "alwaysStrict": true,
     "charset": "utf8",
     "checkJs": false,
-    "declaration": false,
+    "declaration": true,
     "disableSizeLimit": false,
     "downlevelIteration": false,
     "emitBOM": false,
@@ -21,13 +21,13 @@
     "isolatedModules": false,
     "lib": [
       "dom",
-      "es2019"
+      "es2020"
     ],
-    "locale": "en-us",
-    "module": "commonjs",
+    "locale": "en-US",
+    "module": "es2020",
     "moduleResolution": "node",
     "newLine": "lf",
-    "noEmit": false,
+    "noEmit": true,
     "noEmitHelpers": false,
     "noEmitOnError": true,
     "noErrorTruncation": true,
@@ -37,11 +37,11 @@
     "noImplicitThis": true,
     "noStrictGenericChecks": false,
     "noUnusedLocals": true,
-    "noUnusedParameters": false,
+    "noUnusedParameters": true,
     "noImplicitUseStrict": false,
     "noLib": false,
     "noResolve": false,
-    "preserveConstEnums": false,
+    "preserveConstEnums": true,
     "removeComments": false,
     "skipLibCheck": true,
     "sourceMap": true,
@@ -49,10 +49,8 @@
     "strictNullChecks": true,
     "suppressExcessPropertyErrors": false,
     "suppressImplicitAnyIndexErrors": false,
-    "target": "es2017",
-    "traceResolution": false
-  },
-  "files": [
-    "gulpfile.ts"
-  ]
+    "target": "es2020",
+    "traceResolution": false,
+    "rootDir": "."
+  }
 }
