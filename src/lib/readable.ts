@@ -103,29 +103,35 @@ export interface ReadableByteStream {
   readFloat64BE(): Float64;
 
   readFloat64LE(): Float64;
+
+  readFloat64LE32(): Float64;
 }
 
+// Temporary buffer, used for byte swaps for LE32 support.
+const TMP_BUFFER: ArrayBuffer = new ArrayBuffer(8);
+const TMP_DATA_VIEW: DataView = new DataView(TMP_BUFFER);
+
 export class ReadableStream implements ReadableBitStream, ReadableByteStream {
-  bytes: Uint8Array;
-  view: DataView;
+  #bytes: Uint8Array;
+  #view: DataView;
   bytePos: UintSize;
-  byteEnd: UintSize;
+  #byteEnd: UintSize;
   bitPos: UintSize;
 
-  constructor(bytes: Uint8Array, _byteOffset: UintSize = 0, bitOffset: UintSize = 0) {
-    this.bytes = bytes;
-    this.view = new DataView(bytes.buffer, bytes.byteOffset, bytes.length);
+  public constructor(bytes: Uint8Array, _byteOffset: UintSize = 0, bitOffset: UintSize = 0) {
+    this.#bytes = bytes;
+    this.#view = new DataView(bytes.buffer, bytes.byteOffset, bytes.length);
     this.bytePos = 0;
     this.bitPos = bitOffset;
-    this.byteEnd = bytes.length;
+    this.#byteEnd = bytes.length;
   }
 
-  static equals(left: ReadableStream, right: ReadableStream): boolean {
+  public static equals(left: ReadableStream, right: ReadableStream): boolean {
     if (left.bitPos !== right.bitPos) {
       return false;
     }
-    const leftLen: number = left.byteEnd - left.bytePos;
-    const rightLen: number = right.byteEnd - right.bytePos;
+    const leftLen: number = left.#byteEnd - left.bytePos;
+    const rightLen: number = right.#byteEnd - right.bytePos;
     if (leftLen !== rightLen) {
       return false;
     } else if (leftLen === 0) {
@@ -134,188 +140,196 @@ export class ReadableStream implements ReadableBitStream, ReadableByteStream {
     let i: number = 0;
     if (left.bitPos !== 0) {
       i = 1;
-      const leftPartialByte: Uint8 = left.bytes[left.bytePos];
-      const rightPartialByte: Uint8 = right.bytes[right.bytePos];
+      const leftPartialByte: Uint8 = left.#bytes[left.bytePos];
+      const rightPartialByte: Uint8 = right.#bytes[right.bytePos];
       const mask: Uint8 = (1 << (8 - left.bitPos)) - 1;
       if ((leftPartialByte & mask) !== (rightPartialByte & mask)) {
         return false;
       }
     }
     for (; i < leftLen; i++) {
-      if (left.bytes[left.bytePos + i] !== right.bytes[right.bytePos + i]) {
+      if (left.#bytes[left.bytePos + i] !== right.#bytes[right.bytePos + i]) {
         return false;
       }
     }
     return true;
   }
 
-  asBitStream(): this {
+  public asBitStream(): this {
     return this;
   }
 
-  asByteStream(): this {
+  public asByteStream(): this {
     this.align();
     return this;
   }
 
-  align(): void {
+  public align(): void {
     if (this.bitPos !== 0) {
       this.bitPos = 0;
       this.bytePos++;
     }
   }
 
-  tail(): ReadableStream {
+  public tail(): ReadableStream {
     return new ReadableStream(this.tailBytes(), 0, this.bitPos);
   }
 
-  tailBytes(): Uint8Array {
-    const result: Uint8Array = this.bytes.subarray(this.bytePos);
-    this.bytePos = this.byteEnd;
+  public tailBytes(): Uint8Array {
+    const result: Uint8Array = this.#bytes.subarray(this.bytePos);
+    this.bytePos = this.#byteEnd;
     this.bitPos = 0;
     return result;
   }
 
-  available(): number {
-    return this.byteEnd - this.bytePos;
+  public available(): number {
+    return this.#byteEnd - this.bytePos;
   }
 
-  take(length: UintSize): ReadableStream {
+  public take(length: UintSize): ReadableStream {
     return new ReadableStream(this.takeBytes(length), 0, 0);
   }
 
-  takeBytes(length: UintSize): Uint8Array {
-    const result: Uint8Array = this.bytes.subarray(this.bytePos, this.bytePos + length);
+  public takeBytes(length: UintSize): Uint8Array {
+    const result: Uint8Array = this.#bytes.subarray(this.bytePos, this.bytePos + length);
     this.bytePos += length;
     this.bitPos = 0;
     return result;
   }
 
-  readSint8(): Sint8 {
-    return this.view.getInt8(this.bytePos++);
+  public readSint8(): Sint8 {
+    return this.#view.getInt8(this.bytePos++);
   }
 
-  readSint16LE(): Sint16 {
-    const result: Sint16 = this.view.getInt16(this.bytePos, true);
+  public readSint16LE(): Sint16 {
+    const result: Sint16 = this.#view.getInt16(this.bytePos, true);
     this.bytePos += 2;
     return result;
   }
 
-  readSint32LE(): Sint32 {
-    const result: Sint32 = this.view.getInt32(this.bytePos, true);
+  public readSint32LE(): Sint32 {
+    const result: Sint32 = this.#view.getInt32(this.bytePos, true);
     this.bytePos += 4;
     return result;
   }
 
-  readUint8(): Uint8 {
-    return this.view.getUint8(this.bytePos++);
+  public readUint8(): Uint8 {
+    return this.#view.getUint8(this.bytePos++);
   }
 
-  peekUint8(): Uint8 {
-    return this.view.getUint8(this.bytePos);
+  public peekUint8(): Uint8 {
+    return this.#view.getUint8(this.bytePos);
   }
 
-  readUint16BE(): Uint16 {
-    const result: Uint16 = this.view.getUint16(this.bytePos, false);
+  public readUint16BE(): Uint16 {
+    const result: Uint16 = this.#view.getUint16(this.bytePos, false);
     this.bytePos += 2;
     return result;
   }
 
-  readUint16LE(): Uint16 {
-    const result: Uint16 = this.view.getUint16(this.bytePos, true);
+  public readUint16LE(): Uint16 {
+    const result: Uint16 = this.#view.getUint16(this.bytePos, true);
     this.bytePos += 2;
     return result;
   }
 
-  readUint32BE(): Uint32 {
-    const result: Uint32 = this.view.getUint32(this.bytePos, false);
+  public readUint32BE(): Uint32 {
+    const result: Uint32 = this.#view.getUint32(this.bytePos, false);
     this.bytePos += 4;
     return result;
   }
 
-  readUint32LE(): Uint32 {
-    const result: Uint32 = this.view.getUint32(this.bytePos, true);
+  public readUint32LE(): Uint32 {
+    const result: Uint32 = this.#view.getUint32(this.bytePos, true);
     this.bytePos += 4;
     return result;
   }
 
-  readFloat16BE(): Float16 {
-    const u16: Uint16 = this.view.getUint16(this.bytePos, false);
-    this.bytePos += 2;
-    return reinterpretUint16AsFloat16(u16);
-  }
-
-  readFloat16LE(): Float16 {
-    const u16: Uint16 = this.view.getUint16(this.bytePos, true);
+  public readFloat16BE(): Float16 {
+    const u16: Uint16 = this.#view.getUint16(this.bytePos, false);
     this.bytePos += 2;
     return reinterpretUint16AsFloat16(u16);
   }
 
-  readFloat32BE(): Float32 {
-    const result: Float32 = this.view.getFloat32(this.bytePos, false);
+  public readFloat16LE(): Float16 {
+    const u16: Uint16 = this.#view.getUint16(this.bytePos, true);
+    this.bytePos += 2;
+    return reinterpretUint16AsFloat16(u16);
+  }
+
+  public readFloat32BE(): Float32 {
+    const result: Float32 = this.#view.getFloat32(this.bytePos, false);
     this.bytePos += 4;
     return result;
   }
 
-  readFloat32LE(): Float32 {
-    const result: Float32 = this.view.getFloat32(this.bytePos, true);
+  public readFloat32LE(): Float32 {
+    const result: Float32 = this.#view.getFloat32(this.bytePos, true);
     this.bytePos += 4;
     return result;
   }
 
-  readFloat64BE(): Float64 {
-    const result: Float64 = this.view.getFloat64(this.bytePos, false);
+  public readFloat64BE(): Float64 {
+    const result: Float64 = this.#view.getFloat64(this.bytePos, false);
     this.bytePos += 8;
     return result;
   }
 
-  readFloat64LE(): Float64 {
-    const result: Float64 = this.view.getFloat64(this.bytePos, true);
+  public readFloat64LE(): Float64 {
+    const result: Float64 = this.#view.getFloat64(this.bytePos, true);
     this.bytePos += 8;
     return result;
   }
 
-  skip(size: UintSize): void {
+  public readFloat64LE32(): Float64 {
+    TMP_DATA_VIEW.setUint32(0, this.#view.getUint32(this.bytePos + 4, true), true);
+    TMP_DATA_VIEW.setUint32(4, this.#view.getUint32(this.bytePos, true), true);
+    const result: Float64 = TMP_DATA_VIEW.getFloat64(0, true);
+    this.bytePos += 8;
+    return result;
+  }
+
+  public skip(size: UintSize): void {
     this.bytePos += size;
   }
 
-  skipBits(n: number): void {
+  public skipBits(n: number): void {
     this.readUintBits(n);
   }
 
-  readBoolBits(): boolean {
+  public readBoolBits(): boolean {
     return this.readUintBits(1) > 0;
   }
 
-  readSint16Bits(n: number): Sint16 {
-    return this.readIntBits(n);
+  public readSint16Bits(n: number): Sint16 {
+    return this.readSintBits(n);
   }
 
   /**
    * SB[n]
    */
-  readSint32Bits(n: UintSize): Sint32 {
-    return this.readIntBits(n);
+  public readSint32Bits(n: UintSize): Sint32 {
+    return this.readSintBits(n);
   }
 
-  readUint16Bits(n: UintSize): Uint16 {
+  public readUint16Bits(n: UintSize): Uint16 {
     return this.readUintBits(n);
   }
 
   /**
    * UB[n]
    */
-  readUint32Bits(n: UintSize): Uint32 {
+  public readUint32Bits(n: UintSize): Uint32 {
     return this.readUintBits(n);
   }
 
   /**
    * LEB128-encoded Uint32 (1 to 5 bytes)
    */
-  readUint32Leb128(): Uint32 {
+  public readUint32Leb128(): Uint32 {
     let result: Uint32 = 0;
     for (let i: number = 0; i < 5; i++) {
-      const nextByte: Uint8 = this.bytes[this.bytePos++];
+      const nextByte: Uint8 = this.#bytes[this.bytePos++];
       if (i < 4) {
         // Bit-shift is safe
         result += (nextByte & 0x7f) << (7 * i);
@@ -330,23 +344,23 @@ export class ReadableStream implements ReadableBitStream, ReadableByteStream {
     return result;
   }
 
-  readUtf8(byteLength: number): string {
+  public readUtf8(byteLength: number): string {
     const endOfString: number = this.bytePos + byteLength;
-    if (endOfString > this.bytes.length) {
+    if (endOfString > this.#bytes.length) {
       throw createIncompleteStreamError();
     }
-    const slice: Uint8Array = this.bytes.subarray(this.bytePos, endOfString);
+    const slice: Uint8Array = this.#bytes.subarray(this.bytePos, endOfString);
     const result: string = UTF8_DECODER.decode(slice);
     this.bytePos = endOfString;
     return result;
   }
 
-  readNulUtf8(): string {
-    const endOfString: number = this.bytes.indexOf(0, this.bytePos);
+  public readNulUtf8(): string {
+    const endOfString: number = this.#bytes.indexOf(0, this.bytePos);
     if (endOfString < 0) {
       throw createIncompleteStreamError();
     }
-    const slice: Uint8Array = this.bytes.subarray(this.bytePos, endOfString);
+    const slice: Uint8Array = this.#bytes.subarray(this.bytePos, endOfString);
     const result: string = UTF8_DECODER.decode(slice);
     this.bytePos = endOfString + 1;
     return result;
@@ -363,13 +377,13 @@ export class ReadableStream implements ReadableBitStream, ReadableByteStream {
       if (this.bitPos + n < 8) {
         const endBitPos: number = this.bitPos + n;
         const shift: number = 1 << (endBitPos - this.bitPos);
-        const cur: number = (this.bytes[this.bytePos] >>> 8 - endBitPos) & (shift - 1);
+        const cur: number = (this.#bytes[this.bytePos] >>> 8 - endBitPos) & (shift - 1);
         result = result * shift + cur;
         n = 0;
         this.bitPos = endBitPos;
       } else {
         const shift: number = 1 << (8 - this.bitPos);
-        const cur: number = this.bytes[this.bytePos] & (shift - 1);
+        const cur: number = this.#bytes[this.bytePos] & (shift - 1);
         result = result * shift + cur;
         n -= (8 - this.bitPos);
         this.bitPos = 0;
@@ -379,7 +393,7 @@ export class ReadableStream implements ReadableBitStream, ReadableByteStream {
     return result;
   }
 
-  private readIntBits(n: number): number {
+  private readSintBits(n: number): number {
     if (n === 0) {
       return 0;
     }

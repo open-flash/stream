@@ -1,6 +1,7 @@
 # Next
 
 - **[Breaking change]** Update to use native ESM.
+- **[Feature]** Add `Float64LE32` support.
 - **[Internal]** Update dependencies.
 
 # 0.3.0 (2020-01-16)
