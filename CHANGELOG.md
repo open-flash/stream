@@ -1,4 +1,4 @@
-# Next
+# 0.5.0 (2021-07-23)
 
 - **[Breaking change]** Drop `lib` prefix and `.js` extension from deep-imports.
 - **[Fix]** Update dependencies.
