@@ -1,3 +1,8 @@
+# Next
+
+- **[Breaking change]** Drop `lib` prefix and `.js` extension from deep-imports.
+- **[Fix]** Update dependencies.
+
 # 0.4.0 (2021-05-02)
 
 - **[Breaking change]** Update to use native ESM.
